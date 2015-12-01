@@ -9,6 +9,8 @@ newL   .STRINGZ "\n"
 
 start	AND R1, R1, 0	;
 	ST R1, Ci	;
+	AND R2, R2, 0	;
+	ST R2, FLAG	; Reset flag to 0
 	LEA R0, Hello	; Load address of Hello into R0
 	PUTS		; Print Hello
 	LEA R0, Enter	; Load address of Enter into R0
@@ -35,7 +37,13 @@ charE	LD R1, E	; Load E value
 	NOT R2, R0	; Negative value for 2's comp
 	ADD R2, R2, 1	;
 	ADD R1, R2, R1	; Add both values to see if 0
-	BRz ciphmsg	; If zero, cipher
+	BRz sign	; If zero, cipher
+	BRnp charD	; Else
+
+sign	LD R3, FLAG	; Load flag to R3
+	ADD R3, R3, 1	; Increment flag to 1
+	ST R3, FLAG	; Store flag
+	BRnzp ciphmsg	;
 
 charD	LD R1, D	; Load D value
 	NOT R2, R0	; Negative value for 2's comp
@@ -114,7 +122,7 @@ setl	LEA R1, MSG	; Load address of MSG to R1
 	JSR load	; 
 			
 	ADD R6, R6, 0	; Add 0 to R6 to see if last loaded char is 0
-	BRz En_print	;
+	BRz which_print	;
 
 	LD R1, CAPA	; Check if A <= char <= Z
 	NOT R1, R1	; Negative value for 2's comp
@@ -128,8 +136,13 @@ setl	LEA R1, MSG	; Load address of MSG to R1
 	BRp other_range ; If positive, not in range 65-90
 	LD R2, CAPA	;
 	ST R2, FIRSTL	;
-	JSR encrypt	;
-	BRnzp setl_store ;
+
+	LD R1, FLAG	;
+	BRp do_encr	;
+
+	LD R1, FLAG	;
+	BRz do_decr	;
+
 other_range
 	LD R1, LOWA	; Check if a <= char <= z
 	NOT R1, R1	; Negative value for 2's comp
@@ -190,8 +203,39 @@ modloop ADD R6, R6, R3	; (char + INT) - 26
 	ADD R6, R6, R2	; Add back 65 to get ASCII character
 	RET		;
 
-En_print LEA R0, HereEn	; Load address of Here to R1
-	PUTS		; Print Here
+decrypt	LD R1, INT	; Load INT to R1
+	LD R2, FIRSTL	; Load 65 or 97 to R2
+	LD R3, MOD	; Load 26 to R3
+	NOT R2, R2	; Negative value for 2's comp
+	ADD R2, R2, 1	;
+	ADD R6, R6, R2	; char - 48
+	NOT R1, R1	;
+	ADD R1, R1, 1	;
+	ADD R6, R6, R1	; (char - INT)
+	NOT R3, R3	; Negative value for 2's comp
+	ADD R3, R3, 1	;
+modloop_de ADD R6, R6, R3	; (char + INT) - 26
+		BRnz endmod_de	;
+		BRnzp modloop_de	;
+	endmod_de		;
+	LD R3, MOD	; Load 26 to R3
+	ADD R6, R6, R3	; Add back 26 to get number
+	LD R2, FIRSTL	; Load 65 or 97 to R2
+	ADD R6, R6, R2	; Add back 65 to get ASCII character
+	RET		;
+
+which_print LD R1, FLAG	;
+	    BRp print_en ; If flag is 1
+	    BRnzp print_de ; Else
+		
+print_en    LEA R0, HereEn	; Load address of Here to R1
+	    PUTS		; Print Here
+	    BR print		;
+
+print_de    LEA R0, HereDe	; Load address of Here to R1
+	    PUTS		; Print Here
+	    BR print		;
+
 print	LEA R0, MSG	; Load address of MSG
 	PUTS		; Print
 	LEA R0, newL	;
@@ -201,6 +245,11 @@ print	LEA R0, MSG	; Load address of MSG
 	ADD R0, R0, R1  ; Add 200 to get to row1
 	PUTS		; Print 	
 	BRnzp start	;
+
+do_encr JSR encrypt	;
+	BRnzp setl_store ;
+do_decr JSR decrypt	;
+	BRnzp setl_store ;
 	
 end	LEA R0, Bye	; Load Bye to R0
 	PUTS		; Prints
@@ -222,6 +271,7 @@ LOWA	.FILL x0061 ; value for 97 aka a
 CAPZ	.FILL x005A ; value for 90 aka Z
 LOWZ	.FILL x007A ; value for 122 aka z
 FIRSTL	.FILL x0041 ; value for first letter
+FLAG	.FILL x0000 ; Flag is 0 if decrypt, 1 encrypt
 HereDe .STRINGZ "Here is your string and the decrypted result:\n"
 HereEn .STRINGZ "Here is your string and the encrypted result:\n"
 Bye   .STRINGZ "\nBye!"
