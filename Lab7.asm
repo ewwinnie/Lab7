@@ -149,6 +149,8 @@ setl_store LEA R1, MSG	  ;
 	   ADD R2, R2, 1  ; Set row = 1
 	   LD R5, NUMCOL  ; Load 200 to R5
 	   LD R3, Ci	  ;
+	   AND R0, R0, 0  ; Zero out R0
+	   ADD R0, R6, 0  ;
 	   JSR store	  ;
 	   ADD R3, R3, 1  ; increment col
 	   ST R3, Ci	  ;
