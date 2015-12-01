@@ -1,12 +1,15 @@
 
 .ORIG x3000
 
-Hello .STRINGZ "Hello, welcome to the Caesar Cipher program.\n"
+Hello .STRINGZ "\nHello, welcome to the Caesar Cipher program.\n"
 Enter .STRINGZ "Do you want to (E)ncrypt, (D)ecrypt or e(X)it?\n"
-Cipher .STRINGZ "What is the cipher(1-25)?\n"
-String .STRINGZ "What is the string (up to 200 characters)?"
+Cipher .STRINGZ "\nWhat is the cipher(1-25)?\n"
+String .STRINGZ "What is the string (up to 200 characters)?\n"
+newL   .STRINGZ "\n"
 
-start	LEA R0, Hello	; Load address of Hello into R0
+start	AND R1, R1, 0	;
+	ST R1, Ci	;
+	LEA R0, Hello	; Load address of Hello into R0
 	PUTS		; Print Hello
 	LEA R0, Enter	; Load address of Enter into R0
 	PUTS		; Print Enter
@@ -191,9 +194,13 @@ En_print LEA R0, HereEn	; Load address of Here to R1
 	PUTS		; Print Here
 print	LEA R0, MSG	; Load address of MSG
 	PUTS		; Print
+	LEA R0, newL	;
+	PUTS		;
+	LEA R0, MSG	;
 	LD R1, NUMCOL	; Load 200 to R1
 	ADD R0, R0, R1  ; Add 200 to get to row1
 	PUTS		; Print 	
+	BRnzp start	;
 	
 end	LEA R0, Bye	; Load Bye to R0
 	PUTS		; Prints
